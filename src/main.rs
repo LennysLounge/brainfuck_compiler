@@ -75,7 +75,7 @@ fn main() {{
             '.' => writeln!(output, r#"    print!("{{}}", tape[pointer].0 as char);"#),
             ',' => writeln!(output, r#"    tape[pointer] = input.read();"#),
             '#' => writeln!(output, r#"    print!("{{}}", tape[pointer]);"#),
-            x => writeln!(output, "// unimplemented: {x}"),
+            _ => Ok(()),
         }?
     }
 
@@ -95,8 +95,6 @@ fn compile(rs_file: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     } else {
         Err("Compiling rust output failed".into())
     }
-    // std::io::stdout().write_all(&output.stdout).unwrap();
-    // std::io::stderr().write_all(&output.stderr).unwrap();
 }
 
 fn run(executable: &Path) {
