@@ -37,7 +37,7 @@ enum RunMode {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
 
-    transpile(&args.file)?;
+    transpile(&args.file, &args.out_file)?;
     // compile
     if let RunMode::Run = args.run_mode {
         // run
@@ -45,8 +45,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn transpile(source: &Path) -> Result<(), Box<dyn Error>> {
-    let mut output = File::create("out.rs")?;
+fn transpile(source: &Path, dest: &str) -> Result<(), Box<dyn Error>> {
+    let mut output_file_path = PathBuf::from(dest);
+    output_file_path.set_extension("rs");
+
+    let mut output = File::create(output_file_path)?;
     write!(
         output,
         r#"#![allow(unused_mut)]
