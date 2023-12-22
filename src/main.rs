@@ -5,9 +5,47 @@ use std::{
     error::Error,
     fs::{self, File},
     io::Write,
+    path::{Path, PathBuf},
 };
 
+use clap::{Parser, ValueEnum};
+
+#[derive(Parser)]
+#[command(author, version, about)]
+struct Cli {
+    /// What mode to run this program in
+    #[arg(value_enum)]
+    run_mode: RunMode,
+
+    /// The Brainfuck file to compile
+    file: PathBuf,
+
+    /// Name of the output file
+    #[arg(short, long)]
+    #[arg(default_value_t = String::from("out"))]
+    out_file: String,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum RunMode {
+    /// Compile the program and run it
+    Run,
+    /// Compile the program
+    Build,
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
+    let args = Cli::parse();
+
+    transpile(&args.file)?;
+    // compile
+    if let RunMode::Run = args.run_mode {
+        // run
+    }
+    Ok(())
+}
+
+fn transpile(source: &Path) -> Result<(), Box<dyn Error>> {
     let mut output = File::create("out.rs")?;
     write!(
         output,
@@ -22,7 +60,7 @@ fn main() {{
         input = include_str!("input.rs"),
     )?;
 
-    let program = fs::read_to_string("hello_world.bf")?;
+    let program = fs::read_to_string(source)?;
     for char in program.chars() {
         match char {
             '>' => writeln!(output, r#"    pointer += 1;"#),
