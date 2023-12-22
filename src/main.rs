@@ -41,9 +41,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let rs_file = transpile(&args.file, &args.out_file)?;
     compile(&rs_file, &args.out_file)?;
     if let RunMode::Run = args.run_mode {
-        // run
+        run(&args.out_file);
     }
-    println!("Worked yolo");
     Ok(())
 }
 
@@ -98,4 +97,11 @@ fn compile(rs_file: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
     }
     // std::io::stdout().write_all(&output.stdout).unwrap();
     // std::io::stderr().write_all(&output.stderr).unwrap();
+}
+
+fn run(executable: &Path) {
+    Command::new(PathBuf::from("./").join(executable))
+        .arg(executable)
+        .status()
+        .expect("Failed to execute executable");
 }
