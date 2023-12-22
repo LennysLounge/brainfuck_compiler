@@ -6,9 +6,10 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
+    process::Command,
 };
 
-use clap::{Parser, ValueEnum};
+use clap::{builder::OsStr, Parser, ValueEnum};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -22,8 +23,8 @@ struct Cli {
 
     /// Name of the output file
     #[arg(short, long)]
-    #[arg(default_value_t = String::from("out"))]
-    out_file: String,
+    #[arg(default_value_os_t = PathBuf::from("out.exe"))]
+    out_file: PathBuf,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -37,19 +38,19 @@ enum RunMode {
 fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
 
-    transpile(&args.file, &args.out_file)?;
-    // compile
+    let rs_file = transpile(&args.file, &args.out_file)?;
+    compile(&rs_file, &args.out_file)?;
     if let RunMode::Run = args.run_mode {
         // run
     }
+    println!("Worked yolo");
     Ok(())
 }
 
-fn transpile(source: &Path, dest: &str) -> Result<(), Box<dyn Error>> {
-    let mut output_file_path = PathBuf::from(dest);
-    output_file_path.set_extension("rs");
-
-    let mut output = File::create(output_file_path)?;
+fn transpile(source: &Path, dest: &Path) -> Result<PathBuf, Box<dyn Error>> {
+    let rs_file =
+        PathBuf::from(dest.file_stem().unwrap_or(&OsStr::from("out"))).with_extension("rs");
+    let mut output = File::create(&rs_file)?;
     write!(
         output,
         r#"#![allow(unused_mut)]
@@ -80,5 +81,21 @@ fn main() {{
     }
 
     writeln!(output, "}}")?;
-    Ok(())
+    Ok(rs_file)
+}
+
+fn compile(rs_file: &Path, dest: &Path) -> Result<(), Box<dyn Error>> {
+    let status = Command::new("rustc")
+        .arg(rs_file)
+        .arg("-o")
+        .arg(dest)
+        .status()
+        .expect("Failed to execute rustc");
+    if status.success() {
+        Ok(())
+    } else {
+        Err("Compiling rust output failed".into())
+    }
+    // std::io::stdout().write_all(&output.stdout).unwrap();
+    // std::io::stderr().write_all(&output.stderr).unwrap();
 }
